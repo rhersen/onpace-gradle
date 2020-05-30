@@ -32,7 +32,7 @@ class AppTest {
     fun `It should get hello message`() {
         val response : Response = get(url)
         assertEquals(200, response.statusCode)
-        assertEquals("Hello Javalin with Kotlin 1.3.21 on Heroku!", response.text)
+        assertEquals("Hello Javalin with Kotlin 1.3.72 on Heroku!", response.text)
     }
 
     @Test
