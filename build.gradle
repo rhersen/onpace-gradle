@@ -3,10 +3,10 @@ plugins {
 }
 
 apply plugin: 'application'
-mainClassName = "com.lennonjesus.heroku.AppKt"
+mainClassName = "name.hersen.onpace.AppKt"
 
 
-group 'com.lennonjesus.heroku'
+group 'name.hersen.onpace'
 version '0.0.1-SNAPSHOT'
 
 repositories {
@@ -32,7 +32,7 @@ jar {
     manifest {
         attributes(
                 'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'com.lennonjesus.heroku.AppKt'
+                'Main-Class': 'name.hersen.onpace.AppKt'
         )
     }
 

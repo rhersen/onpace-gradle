@@ -1,4 +1,4 @@
-package com.lennonjesus.heroku
+package name.hersen.onpace
 
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.get
@@ -23,7 +23,7 @@ class JavalinApp(private val port: Int) {
         // app endpoints
         app.routes {
             get("/") { ctx ->
-                ctx.status(200).result("Hello Javalin with Kotlin on Heroku!")
+                ctx.status(200).result("Hello Javalin with Kotlin 1.3.21 on Heroku!")
             }
         }
 
