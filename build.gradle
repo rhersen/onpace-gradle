@@ -21,7 +21,7 @@ dependencies {
     compile 'org.slf4j:slf4j-simple:1.7.26'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.4'
-    compile 'khttp:khttp:0.1.0'
+    compile 'khttp:khttp:1.0.0'
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.4.2")
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
