@@ -28,8 +28,18 @@ class JavalinApp(private val port: Int) {
                 val con: HttpURLConnection = url.openConnection() as HttpURLConnection
                 try {
                     val distance: Double? = athlete(con)?.ytd_run_totals?.distance
-                    val target = 15e5 * LocalDate.now().dayOfYear / 366.0
-                    ctx.result(distance.toString() + " " + target)
+                    if (distance == null) {
+                        ctx.result("ytd_run_totals saknas")
+                    } else {
+                        val target: Double = 15e5 * LocalDate.now().dayOfYear / 366.0
+                        ctx.html(
+                            """<html>
+<meta charset='UTF-8'>
+<div>Du har sprungit ${String.format("%.1f", distance / 100)} km i år.</div>
+<div>Målet är ${String.format("%.1f", target / 100)} km.</div>
+<div>Du ligger ${String.format("%.1f", target - distance)} meter efter.</div>"""
+                        )
+                    }
                 } catch (e: Exception) {
                     ctx.status(con.responseCode).result(e.message ?: e.toString())
                 }
