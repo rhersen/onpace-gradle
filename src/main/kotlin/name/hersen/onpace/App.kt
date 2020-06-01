@@ -32,16 +32,20 @@ class JavalinApp(private val port: Int) {
                 )
                 val mapper = ObjectMapper().registerModule(KotlinModule())
                 JavalinJackson.configure(mapper)
-                val rootObject: RootObject = mapper.readValue(response.text, RootObject::class.java)
-                val distance: Double = rootObject.ytd_run_totals.distance
-                val target: Double = 15e5 * LocalDate.now().dayOfYear / 366.0
-                ctx.html(
-                    """<html>
-<meta charset='UTF-8'>
-<div>Du har sprungit ${String.format("%.1f", distance / 100)} km i år.</div>
-<div>Målet är ${String.format("%.1f", target / 100)} km.</div>
-<div>Du ligger ${String.format("%.1f", target - distance)} meter efter.</div>"""
-                )
+                if (response.statusCode == 200) {
+                    val rootObject: RootObject = mapper.readValue(response.text, RootObject::class.java)
+                    val distance: Double = rootObject.ytd_run_totals.distance
+                    val target: Double = 15e5 * LocalDate.now().dayOfYear / 366.0
+                    ctx.html(
+                        """<html>
+    <meta charset='UTF-8'>
+    <div>Du har sprungit ${String.format("%.1f", distance / 100)} km i år.</div>
+    <div>Målet är ${String.format("%.1f", target / 100)} km.</div>
+    <div>Du ligger ${String.format("%.1f", target - distance)} meter efter.</div>"""
+                    )
+                } else {
+                    ctx.status(response.statusCode).result(response.text)
+                }
             }
         }
 
