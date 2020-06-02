@@ -75,7 +75,7 @@ data class AllSwimTotals(
     val elevation_gain: Double
 )
 
-data class RootObject(
+data class ActivityStats(
     val biggest_ride_distance: Double,
     val biggest_climb_elevation_gain: Double,
     val recent_ride_totals: RecentRideTotals,

@@ -6,10 +6,6 @@ import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.get
 import io.javalin.plugin.json.JavalinJackson
 import khttp.responses.Response
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 import java.net.URLEncoder
 import java.time.LocalDate
 
@@ -24,23 +20,64 @@ class JavalinApp(private val port: Int) {
             error(404) { ctx -> ctx.result("Not found") }
         }.start(System.getenv("PORT")?.toIntOrNull() ?: this.port)
 
+        val mapper = ObjectMapper().registerModule(KotlinModule())
+        JavalinJackson.configure(mapper)
+
         app.routes {
+            get("/login") { ctx ->
+                ctx.redirect(
+                    "https://www.strava.com/oauth/authorize?client_id=45920&redirect_uri=${URLEncoder.encode(
+                        "http://localhost:7000/logged-in",
+                        "UTF-8"
+                    )}&response_type=code"
+                )
+            }
+            get("/logged-in") { ctx ->
+                val code: String = ctx.queryParams("code").joinToString()
+                println(System.getenv("CLIENT_ID"))
+                val postResponse = khttp.post(
+                    "https://www.strava.com/api/v3/oauth/token",
+                    params = mapOf(
+                        "code" to code,
+                        "client_id" to System.getenv("CLIENT_ID"),
+                        "client_secret" to System.getenv("CLIENT_SECRET"),
+                        "grant_type" to "authorization_code"
+                    )
+                )
+                val authentication: Authentication = mapper.readValue(postResponse.text, Authentication::class.java)
+                val getResponse: Response = khttp.get(
+                    "https://www.strava.com/api/v3/athletes/13317026/stats",
+                    headers = mapOf("Authorization" to "Bearer ${authentication.access_token}")
+                )
+                if (getResponse.statusCode == 200) {
+                    val activityStats: ActivityStats = mapper.readValue(getResponse.text, ActivityStats::class.java)
+                    val distance: Double = activityStats.ytd_run_totals.distance
+                    val target: Double = 15e5 * LocalDate.now().dayOfYear / 366.0
+                    ctx.html(
+                        """<html>
+    <meta charset='UTF-8'>
+    <div>Du har sprungit ${String.format("%.1f", distance * 1e-3)} km i år.</div>
+    <div>Målet är ${String.format("%.1f", target * 1e-3)} km.</div>
+    <div>Du ligger ${String.format("%.1f", target - distance)} meter efter.</div>"""
+                    )
+                } else {
+                    ctx.status(getResponse.statusCode).result(getResponse.text)
+                }
+            }
             get("/") { ctx ->
                 val response: Response = khttp.get(
                     "https://www.strava.com/api/v3/athletes/13317026/stats",
                     headers = mapOf("Authorization" to "Bearer ${System.getenv("BEARER")}")
                 )
-                val mapper = ObjectMapper().registerModule(KotlinModule())
-                JavalinJackson.configure(mapper)
                 if (response.statusCode == 200) {
-                    val rootObject: RootObject = mapper.readValue(response.text, RootObject::class.java)
-                    val distance: Double = rootObject.ytd_run_totals.distance
+                    val activityStats: ActivityStats = mapper.readValue(response.text, ActivityStats::class.java)
+                    val distance: Double = activityStats.ytd_run_totals.distance
                     val target: Double = 15e5 * LocalDate.now().dayOfYear / 366.0
                     ctx.html(
                         """<html>
     <meta charset='UTF-8'>
-    <div>Du har sprungit ${String.format("%.1f", distance / 100)} km i år.</div>
-    <div>Målet är ${String.format("%.1f", target / 100)} km.</div>
+    <div>Du har sprungit ${String.format("%.1f", distance * 1e-3)} km i år.</div>
+    <div>Målet är ${String.format("%.1f", target * 1e-3)} km.</div>
     <div>Du ligger ${String.format("%.1f", target - distance)} meter efter.</div>"""
                     )
                 } else {
