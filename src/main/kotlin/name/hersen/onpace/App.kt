@@ -27,7 +27,7 @@ class JavalinApp(private val port: Int) {
             get("/login") { ctx ->
                 ctx.redirect(
                     "https://www.strava.com/oauth/authorize?client_id=45920&redirect_uri=${URLEncoder.encode(
-                        "http://localhost:7000/logged-in",
+                        ctx.url().replace("login", "logged-in"),
                         "UTF-8"
                     )}&response_type=code"
                 )
