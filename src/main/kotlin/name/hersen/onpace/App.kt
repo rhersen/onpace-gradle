@@ -34,34 +34,42 @@ class JavalinApp(private val port: Int) {
             }
             get("/logged-in") { ctx ->
                 val code: String = ctx.queryParams("code").joinToString()
-                println(System.getenv("CLIENT_ID"))
-                val postResponse = khttp.post(
-                    "https://www.strava.com/api/v3/oauth/token",
-                    params = mapOf(
-                        "code" to code,
-                        "client_id" to System.getenv("CLIENT_ID"),
-                        "client_secret" to System.getenv("CLIENT_SECRET"),
-                        "grant_type" to "authorization_code"
+                val clientId = System.getenv("CLIENT_ID")
+                val clientSecret = System.getenv("CLIENT_SECRET")
+
+                if (clientId == null) {
+                    ctx.status(500).result("CLIENT_ID missing")
+                } else if (clientSecret == null) {
+                    ctx.status(500).result("CLIENT_SECRET missing")
+                } else {
+                    val postResponse = khttp.post(
+                        "https://www.strava.com/api/v3/oauth/token",
+                        params = mapOf(
+                            "code" to code,
+                            "client_id" to clientId,
+                            "client_secret" to clientSecret,
+                            "grant_type" to "authorization_code"
+                        )
                     )
-                )
-                val authentication: Authentication = mapper.readValue(postResponse.text, Authentication::class.java)
-                val getResponse: Response = khttp.get(
-                    "https://www.strava.com/api/v3/athletes/13317026/stats",
-                    headers = mapOf("Authorization" to "Bearer ${authentication.access_token}")
-                )
-                if (getResponse.statusCode == 200) {
-                    val activityStats: ActivityStats = mapper.readValue(getResponse.text, ActivityStats::class.java)
-                    val distance: Double = activityStats.ytd_run_totals.distance
-                    val target: Double = 15e5 * LocalDate.now().dayOfYear / 366.0
-                    ctx.html(
-                        """<html>
+                    val authentication: Authentication = mapper.readValue(postResponse.text, Authentication::class.java)
+                    val getResponse: Response = khttp.get(
+                        "https://www.strava.com/api/v3/athletes/13317026/stats",
+                        headers = mapOf("Authorization" to "Bearer ${authentication.access_token}")
+                    )
+                    if (getResponse.statusCode == 200) {
+                        val activityStats: ActivityStats = mapper.readValue(getResponse.text, ActivityStats::class.java)
+                        val distance: Double = activityStats.ytd_run_totals.distance
+                        val target: Double = 15e5 * LocalDate.now().dayOfYear / 366.0
+                        ctx.html(
+                            """<html>
     <meta charset='UTF-8'>
     <div>Du har sprungit ${String.format("%.1f", distance * 1e-3)} km i år.</div>
     <div>Målet är ${String.format("%.1f", target * 1e-3)} km.</div>
     <div>Du ligger ${String.format("%.1f", target - distance)} meter efter.</div>"""
-                    )
-                } else {
-                    ctx.status(getResponse.statusCode).result(getResponse.text)
+                        )
+                    } else {
+                        ctx.status(getResponse.statusCode).result(getResponse.text)
+                    }
                 }
             }
         }
